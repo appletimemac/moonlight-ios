@@ -7,6 +7,7 @@
 //
 
 #import "VideoDecoderRenderer.h"
+#import "VideoLayout.h"
 #import "StreamView.h"
 
 #include <libavcodec/avcodec.h>
@@ -39,19 +40,10 @@ extern int ff_isom_write_av1c(AVIOContext *pb, const uint8_t *buf, int size,
 
 - (void)layoutDisplayLayer
 {
-    // Ensure the AVSampleBufferDisplayLayer is sized to preserve the aspect ratio
-    // of the video stream. We used to use AVLayerVideoGravityResizeAspect, but that
-    // respects the PAR encoded in the SPS which causes our computed video-relative
-    // touch location to be wrong in StreamView if the aspect ratio of the host
-    // desktop doesn't match the aspect ratio of the stream.
-    CGSize videoSize;
-    if (_view.bounds.size.width > _view.bounds.size.height * _streamAspectRatio) {
-        videoSize = CGSizeMake(_view.bounds.size.height * _streamAspectRatio, _view.bounds.size.height);
-    } else {
-        videoSize = CGSizeMake(_view.bounds.size.width, _view.bounds.size.width / _streamAspectRatio);
-    }
-    displayLayer.position = CGPointMake(CGRectGetMidX(_view.bounds), CGRectGetMidY(_view.bounds));
-    displayLayer.bounds = CGRectMake(0, 0, videoSize.width, videoSize.height);
+    // Sized by hand (with AVLayerVideoGravityResize) so it matches StreamView's touch mapping
+    CGRect videoRect = VideoRectInBounds(_view.bounds, _streamAspectRatio);
+    displayLayer.position = CGPointMake(CGRectGetMidX(videoRect), CGRectGetMidY(videoRect));
+    displayLayer.bounds = CGRectMake(0, 0, videoRect.size.width, videoRect.size.height);
 }
 
 // Called when the view size changes (e.g. folding or unfolding iPhone Duo)

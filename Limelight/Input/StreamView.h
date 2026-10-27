@@ -29,6 +29,11 @@
                   config:(StreamConfiguration*)streamConfig;
 - (void) showOnScreenControls;
 - (OnScreenControlsLevel) getCurrentOscState;
+- (void) toggleKeyboard;
+// Call after the view changes size
+- (void) updateOnScreenControlsLayout;
+// The iPhone Duo panel shows its own gamepad while the stream is split
+- (void) setOnScreenControlsSuppressed:(BOOL)suppressed;
 
 #if !TARGET_OS_TV
 - (void) updateCursorLocation:(CGPoint)location isMouse:(BOOL)isMouse;

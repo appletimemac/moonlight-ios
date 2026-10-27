@@ -12,7 +12,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface RelativeTouchHandler : UIResponder
 
--(id)initWithView:(StreamView*)view;
+-(id)initWithView:(UIView*)view;
+
+// Scale both axes by the view's width so a short, wide trackpad moves the cursor
+// equally in every direction. Stream views keep the 1280x720 reference instead.
+@property (nonatomic) BOOL uniformScaling;
 
 @end
 

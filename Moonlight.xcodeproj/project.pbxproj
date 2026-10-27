@@ -176,6 +176,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		27713ECD2A2BEE77CDFBA76F /* VideoLayout.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = VideoLayout.h; sourceTree = "<group>"; };
 		455592BB0D09F2ABA891905C /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		4807CBCBB5715C46377FC6D8 /* HostDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HostDetailView.swift; sourceTree = "<group>"; };
 		4F59F99ACE1FE04AB46CEC80 /* HostModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HostModels.swift; sourceTree = "<group>"; };
@@ -593,6 +594,7 @@
 				FB89461C19F646E200339C8A /* VideoDecoderRenderer.h */,
 				FB89461D19F646E200339C8A /* VideoDecoderRenderer.m */,
 				9803CCAB254F9EAF00EE185E /* ConnectionCallbacks.h */,
+				27713ECD2A2BEE77CDFBA76F /* VideoLayout.h */,
 			);
 			path = Stream;
 			sourceTree = "<group>";

@@ -28,7 +28,7 @@ static const int REFERENCE_HEIGHT = 720;
     UIView* view;
 }
 
-- (id)initWithView:(StreamView*)view {
+- (id)initWithView:(UIView*)view {
     self = [self init];
     self->view = view;
     
@@ -88,8 +88,10 @@ static const int REFERENCE_HEIGHT = 720;
         if (touchLocation.x != currentLocation.x ||
             touchLocation.y != currentLocation.y)
         {
-            int deltaX = (currentLocation.x - touchLocation.x) * (REFERENCE_WIDTH / view.bounds.size.width);
-            int deltaY = (currentLocation.y - touchLocation.y) * (REFERENCE_HEIGHT / view.bounds.size.height);
+            CGFloat scaleX = REFERENCE_WIDTH / view.bounds.size.width;
+            CGFloat scaleY = self.uniformScaling ? scaleX : REFERENCE_HEIGHT / view.bounds.size.height;
+            int deltaX = (currentLocation.x - touchLocation.x) * scaleX;
+            int deltaY = (currentLocation.y - touchLocation.y) * scaleY;
             
             if (deltaX != 0 || deltaY != 0) {
                 LiSendMouseMoveEvent(deltaX, deltaY);
