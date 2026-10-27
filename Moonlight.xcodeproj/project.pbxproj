@@ -14,6 +14,7 @@
 		3DB9585C0B55BB73E9B00398 /* CoreUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 8D5BEDB6BAA37A91B8942BE4 /* CoreUtilities.m */; };
 		47E1791B11FD1F7FFCAFF18A /* StreamPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029879B3C98C98540D183B66 /* StreamPanelController.swift */; };
 		5013FC8EB548D918853F660E /* X1Kit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35563C7E1B16439BD4B661F /* X1Kit.swift */; };
+		5CDC70302A8099B20FA0258C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EB757FA798493A05B1D7A04B /* PrivacyInfo.xcprivacy */; };
 		693B3A9B218638CD00982F7B /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 693B3A9A218638CD00982F7B /* Settings.bundle */; };
 		6AD51BBF37462E7359C119BF /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 455592BB0D09F2ABA891905C /* SettingsView.swift */; };
 		7F6FCF268FB950BA0B69D924 /* HostLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C5157627CFA120A11D2422D /* HostLibrary.swift */; };
@@ -264,6 +265,7 @@
 		DC1F5A06206436B20037755F /* ConnectionHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ConnectionHelper.m; sourceTree = "<group>"; };
 		DCD1EBC3FF4826C4B9DB75DC /* PanelGamepadView.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = PanelGamepadView.h; sourceTree = "<group>"; };
 		E7C08BA4246D87477123393D /* StreamPresentation.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = StreamPresentation.h; sourceTree = "<group>"; };
+		EB757FA798493A05B1D7A04B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		FB1A674B2131E65900507771 /* KeyboardSupport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyboardSupport.h; sourceTree = "<group>"; };
 		FB1A674C2131E65900507771 /* KeyboardSupport.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyboardSupport.m; sourceTree = "<group>"; };
 		FB1A67532132419700507771 /* Moonlight TV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Moonlight TV.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -575,6 +577,7 @@
 				FB1D59981BBCCD7E00F482CA /* AppCollectionView.h */,
 				FB1D59991BBCCD7E00F482CA /* AppCollectionView.m */,
 				9E9859A269997539B0AF4799 /* App */,
+				EB757FA798493A05B1D7A04B /* PrivacyInfo.xcprivacy */,
 			);
 			name = Moonlight;
 			path = Limelight;
@@ -956,6 +959,7 @@
 				FB290CFE19B2C406004C83CF /* InfoPlist.strings in Resources */,
 				FB290D0919B2C406004C83CF /* Images.xcassets in Resources */,
 				FB89463819F6473800339C8A /* Launch Screen.xib in Resources */,
+				5CDC70302A8099B20FA0258C /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
