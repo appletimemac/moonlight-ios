@@ -10,7 +10,8 @@ final class StreamPresenter {
     }
 
     func present(_ configuration: StreamConfiguration, onExit: @escaping @MainActor (StreamExitAction) -> Void) {
-        guard var top = window?.rootViewController else { return }
+        // The core keeps one connection and one set of callbacks, so one stream at a time
+        guard !isStreaming, var top = window?.rootViewController else { return }
         while let presented = top.presentedViewController {
             top = presented
         }
@@ -20,5 +21,10 @@ final class StreamPresenter {
         }
         isStreaming = true
         top.present(stream, animated: true)
+        // UIKit refuses a presentation while another one is in flight, and then the exit
+        // handler never runs, which would block every later stream
+        if top.presentedViewController !== stream {
+            isStreaming = false
+        }
     }
 }

@@ -26,23 +26,24 @@ enum Background {
     }
 }
 
-// Receives the core's delegate callbacks, which arrive on arbitrary threads, and
-// replays them on the main actor in the order they were sent (pairing relies on
-// startPairing landing before any failure).
-final class CoreCallbacks: NSObject, DiscoveryCallback, PairCallback, AppAssetCallback, @unchecked Sendable {
+// The core calls its delegates on arbitrary threads. Replaying through the main queue
+// keeps them in the order they were sent (pairing relies on startPairing landing first).
+private func onMainActor(_ body: @escaping @MainActor @Sendable () -> Void) {
+    if Thread.isMainThread {
+        MainActor.assumeIsolated(body)
+    } else {
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated(body)
+        }
+    }
+}
+
+final class CoreCallbacks: NSObject, DiscoveryCallback, AppAssetCallback, @unchecked Sendable {
     @MainActor weak var library: HostLibrary?
 
     private func onMain(_ body: @escaping @MainActor @Sendable (HostLibrary) -> Void) {
-        if Thread.isMainThread {
-            MainActor.assumeIsolated {
-                if let library { body(library) }
-            }
-        } else {
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated {
-                    if let library = self.library { body(library) }
-                }
-            }
+        onMainActor {
+            if let library = self.library { body(library) }
         }
     }
 
@@ -51,29 +52,48 @@ final class CoreCallbacks: NSObject, DiscoveryCallback, PairCallback, AppAssetCa
         onMain { $0.discoveryFound(found.value) }
     }
 
-    func startPairing(_ PIN: String!) {
-        let pin = PIN ?? ""
-        onMain { $0.pairingShowsPIN(pin) }
-    }
-
-    func pairSuccessful(_ serverCert: Data!) {
-        let cert = serverCert
-        onMain { $0.pairingSucceeded(serverCert: cert) }
-    }
-
-    func pairFailed(_ message: String!) {
-        let message = message ?? "Pairing failed."
-        onMain { $0.pairingFailed(message) }
-    }
-
-    func alreadyPaired() {
-        onMain { $0.pairingSucceeded(serverCert: nil) }
-    }
-
     func receivedAsset(for app: TemporaryApp!) {
         let hostID = app?.host.map(HostSnapshot.identifier(for:))
         onMain { library in
             if let hostID { library.boxArtArrived(forHostID: hostID) }
         }
+    }
+}
+
+// One per pairing attempt (PairManager retains it)
+final class PairingCallbacks: NSObject, PairCallback, @unchecked Sendable {
+    private let session: UUID
+    @MainActor private weak var library: HostLibrary?
+
+    @MainActor
+    init(session: UUID, library: HostLibrary) {
+        self.session = session
+        self.library = library
+    }
+
+    private func onMain(_ body: @escaping @MainActor @Sendable (HostLibrary, UUID) -> Void) {
+        let session = session
+        onMainActor {
+            if let library = self.library { body(library, session) }
+        }
+    }
+
+    func startPairing(_ PIN: String!) {
+        let pin = PIN ?? ""
+        onMain { $0.pairingShowsPIN(pin, session: $1) }
+    }
+
+    func pairSuccessful(_ serverCert: Data!) {
+        let cert = serverCert
+        onMain { $0.pairingSucceeded(serverCert: cert, session: $1) }
+    }
+
+    func pairFailed(_ message: String!) {
+        let message = message ?? "Pairing failed."
+        onMain { $0.pairingFailed(message, session: $1) }
+    }
+
+    func alreadyPaired() {
+        onMain { $0.pairingSucceeded(serverCert: nil, session: $1) }
     }
 }

@@ -43,7 +43,8 @@ struct HostSnapshot: Identifiable, Hashable, Sendable {
         address = host.activeAddress
         canWake = host.mac != nil && host.mac != "00:00:00:00:00:00"
         isNvidiaGameStream = host.isNvidiaServerSoftware
-        apolloAccess = host.apolloPermissions >= 0 ? ApolloAccess(mask: UInt32(host.apolloPermissions)) : nil
+        // A mask from an earlier paired poll means nothing once the PC reads as unpaired
+        apolloAccess = host.pairState == .paired && host.apolloPermissions >= 0 ? ApolloAccess(mask: UInt32(host.apolloPermissions)) : nil
         virtualDisplayCapable = host.virtualDisplayCapable
         hasCachedApps = host.appList.count > 0
     }

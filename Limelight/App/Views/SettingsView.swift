@@ -11,7 +11,7 @@ struct SettingsView: View {
     @AppStorage(AppPreferences.resolutionModeKey) private var resolutionMode = ResolutionMode.matchDisplay
     @AppStorage(AppPreferences.useVirtualDisplayKey) private var useVirtualDisplay = false
     @AppStorage(AppPreferences.virtualDisplayScaleKey) private var virtualDisplayScale = 100
-    @AppStorage(AppPreferences.pairingDeviceNameKey) private var deviceName = ""
+    @AppStorage(AppPreferences.deviceNameKey) private var deviceName = ""
     @AppStorage(AppPreferences.tabletopPanelKey) private var tabletopPanel = TabletopPanel.trackpad
 
     private enum Field: Hashable {
@@ -41,7 +41,12 @@ struct SettingsView: View {
                     Button("Dismiss Keyboard", systemImage: "keyboard.chevron.compact.down") { focusedField = nil }
                 }
             }
-            .onChange(of: focusedField) { commitCustomResolution() }
+            .onChange(of: focusedField) { _, field in
+                // Moving between Width and Height keeps a half-typed size intact
+                if field != .width && field != .height {
+                    commitCustomResolution()
+                }
+            }
         }
         .onDisappear { save() }
     }

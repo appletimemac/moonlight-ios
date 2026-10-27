@@ -4,10 +4,12 @@ import UIKit
 struct PairingSheet: View {
     let session: PairingSession
     @Environment(HostLibrary.self) private var library
+    @State private var lastPhase: PairingSession?
 
-    // Reading the live session keeps the sheet in step with phase changes made by the library
+    // Follows the library's phase changes, and keeps the last one while the sheet slides
+    // away (the library clears the session first)
     private var current: PairingSession {
-        library.pairing ?? session
+        library.pairing ?? lastPhase ?? session
     }
 
     var body: some View {
@@ -33,6 +35,11 @@ struct PairingSheet: View {
         }
         .interactiveDismissDisabled()
         .presentationDetents([.medium, .large])
+        .onChange(of: library.pairing?.phase) {
+            if let live = library.pairing {
+                lastPhase = live
+            }
+        }
     }
 }
 

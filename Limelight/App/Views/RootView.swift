@@ -30,6 +30,11 @@ struct RootView: View {
             }
         }
         .animation(.smooth, value: library.busyMessage)
+        .onChange(of: library.busyMessage) { _, message in
+            if let message {
+                AccessibilityNotification.Announcement(message).post()
+            }
+        }
         .sheet(item: $library.pairing) { session in
             PairingSheet(session: session)
         }

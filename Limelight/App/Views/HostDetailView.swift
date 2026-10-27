@@ -54,7 +54,7 @@ struct HostDetailView: View {
             }
         case (.online, .paired):
             let apps = library.apps(for: host.id)
-            if apps.isEmpty {
+            if apps.isEmpty && !library.loadedAppLists.contains(host.id) {
                 ProgressView("Loading apps")
             } else {
                 AppGridView(host: host, apps: apps)

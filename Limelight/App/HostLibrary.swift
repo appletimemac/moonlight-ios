@@ -8,6 +8,8 @@ import UIKit
 final class HostLibrary {
     private(set) var hosts: [HostSnapshot] = []
     private(set) var appsByHost: [String: [AppSnapshot]] = [:]
+    // PCs whose app list has been fetched at least once this launch
+    private(set) var loadedAppLists: Set<String> = []
     private(set) var selectedHostID: String?
     private(set) var busyMessage: String?
     var showsHiddenApps = false
@@ -25,6 +27,7 @@ final class HostLibrary {
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
     @ObservationIgnored private var isForeground = false
     @ObservationIgnored private var shortcutHostIDs: [String] = []
+    @ObservationIgnored private var stoppingDiscoveryForPairing = false
 
     var selectedHost: HostSnapshot? {
         hosts.first { $0.id == selectedHostID }
@@ -174,58 +177,69 @@ final class HostLibrary {
         if AppPreferences.pairingDeviceName == nil {
             pairing = PairingSession(hostID: hostID, hostName: host.name, phase: .naming)
         } else {
-            pairing = PairingSession(hostID: hostID, hostName: host.name, phase: .requesting)
-            startPairManager(host)
+            let session = PairingSession(hostID: hostID, hostName: host.name, phase: .requesting)
+            pairing = session
+            startPairManager(host, session: session.id)
         }
     }
 
     func confirmPairing(deviceName: String) {
         let name = deviceName.trimmingCharacters(in: .whitespacesAndNewlines)
         if !name.isEmpty {
-            UserDefaults.standard.set(name, forKey: AppPreferences.pairingDeviceNameKey)
+            UserDefaults.standard.set(name, forKey: AppPreferences.deviceNameKey)
         }
         guard var session = pairing, let host = coreHosts[session.hostID] else { return }
         session.phase = .requesting
         pairing = session
-        startPairManager(host)
+        startPairManager(host, session: session.id)
     }
 
     func cancelPairing() {
         pairing = nil
-        discovery.startDiscovery()
+        // A stop still in flight would undo a restart now; it restarts discovery itself
+        if !stoppingDiscoveryForPairing {
+            discovery.startDiscovery()
+        }
     }
 
-    private func startPairManager(_ host: TemporaryHost) {
+    private func startPairManager(_ host: TemporaryHost, session: UUID) {
         let discovery = Unchecked(discovery)
+        stoppingDiscoveryForPairing = true
         Task {
             // Polling the PC while it pairs makes it fail
             await Background.run { discovery.value.stopDiscoveryBlocking() }
-            guard pairing != nil else { return }
-            let manager = PairManager(manager: HttpManager(host: host), clientCert: clientCert, callback: callbacks)
+            stoppingDiscoveryForPairing = false
+            guard pairing?.id == session else {
+                self.discovery.startDiscovery()
+                return
+            }
+            let relay = PairingCallbacks(session: session, library: self)
+            let manager = PairManager(manager: HttpManager(host: host), clientCert: clientCert, callback: relay)
             operations.addOperation(manager!)
         }
     }
 
-    func pairingShowsPIN(_ pin: String) {
-        guard var session = pairing else { return }
-        session.phase = .showingPIN(pin)
-        pairing = session
+    // Each attempt reports with its own session, so a cancelled attempt that finishes
+    // late cannot touch the session (or the PC) that replaced it
+    func pairingShowsPIN(_ pin: String, session: UUID) {
+        guard var current = pairing, current.id == session else { return }
+        current.phase = .showingPIN(pin)
+        pairing = current
     }
 
-    func pairingSucceeded(serverCert: Data?) {
-        guard let session = pairing else { return }
+    func pairingSucceeded(serverCert: Data?, session: UUID) {
+        guard let current = pairing, current.id == session else { return }
         pairing = nil
         discovery.startDiscovery()
-        guard let host = coreHosts[session.hostID] else { return }
+        guard let host = coreHosts[current.hostID] else { return }
         if let serverCert {
             host.serverCert = serverCert
         }
         refreshApps(host, userInitiated: true)
     }
 
-    func pairingFailed(_ message: String) {
-        // A cancelled session can still fail later; the user already moved on
-        guard pairing != nil else { return }
+    func pairingFailed(_ message: String, session: UUID) {
+        guard pairing?.id == session else { return }
         pairing = nil
         discovery.startDiscovery()
         alert = LibraryAlert(title: "Pairing Failed", message: message, helpURL: LibraryAlert.troubleshootingURL)
@@ -254,6 +268,7 @@ final class HostLibrary {
                 return
             }
             mergeApps(fresh, into: host)
+            loadedAppLists.insert(hostID)
             if selectedHostID == hostID {
                 assets.stopRetrieving()
                 assets.retrieveAssets(from: host)
@@ -395,7 +410,8 @@ final class HostLibrary {
             }
             host.currentGame = "0"
             rebuildHosts()
-            if let next {
+            // The user may have started another stream while this quit was in flight
+            if let next, !presenter.isStreaming {
                 startStream(next)
             }
         }

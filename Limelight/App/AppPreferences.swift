@@ -26,8 +26,9 @@ enum AppPreferences {
     static let useVirtualDisplayKey = "UseVirtualDisplay"
     static let virtualDisplayScaleKey = "VirtualDisplayScale"
     static let tabletopPanelKey = "TabletopPanel"
-    // Read by Utils.m when pairing
-    static let pairingDeviceNameKey: String = pairingDeviceNameKey
+    // Utils.m reads the pairing name under this key. The Swift name must differ from the
+    // Objective-C constant, or the initializer would read this property instead of it.
+    static let deviceNameKey: String = pairingDeviceNameKey
 
     static var resolutionMode: ResolutionMode {
         UserDefaults.standard.string(forKey: resolutionModeKey).flatMap(ResolutionMode.init) ?? .matchDisplay
@@ -48,7 +49,7 @@ enum AppPreferences {
     }
 
     static var pairingDeviceName: String? {
-        let name = UserDefaults.standard.string(forKey: pairingDeviceNameKey)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = UserDefaults.standard.string(forKey: deviceNameKey)?.trimmingCharacters(in: .whitespacesAndNewlines)
         return name?.isEmpty == false ? name : nil
     }
 }
