@@ -55,8 +55,10 @@
     // Use the same UID for all Moonlight clients to allow them
     // quit games started on another Moonlight client.
     _uniqueId = @"0123456789ABCDEF";
-    // The name goes into pairing query strings as is
-    _deviceName = [[Utils pairingDeviceName] stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet alphanumericCharacterSet]];
+    // The name goes into pairing query strings as is. Escape everything outside RFC 3986's
+    // unreserved ASCII set; alphanumericCharacterSet would let non-ASCII letters through.
+    NSCharacterSet* unreserved = [NSCharacterSet characterSetWithCharactersInString:@"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"];
+    _deviceName = [[Utils pairingDeviceName] stringByAddingPercentEncodingWithAllowedCharacters:unreserved];
     _serverCert = serverCert;
     
     NSString* address = [Utils addressPortStringToAddress:hostAddressPortString];
