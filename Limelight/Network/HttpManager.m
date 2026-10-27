@@ -306,6 +306,54 @@
     return [self createRequestFromString:urlString timeout:LONG_TIMEOUT_SEC];
 }
 
+- (NSURLRequest*) newClipboardRequest {
+    if (![self ensureHttpsUrlPopulated:NO]) {
+        return nil;
+    }
+    
+    NSString* urlString = [NSString stringWithFormat:@"%@/actions/clipboard?type=text&uniqueid=%@", _baseHTTPSURL, _uniqueId];
+    return [self createRequestFromString:urlString timeout:NORMAL_TIMEOUT_SEC];
+}
+
+- (NSURLRequest*) newClipboardUpdateRequest:(NSString*)text {
+    NSMutableURLRequest* request = [[self newClipboardRequest] mutableCopy];
+    request.HTTPMethod = @"POST";
+    [request setValue:@"text/plain; charset=utf-8" forHTTPHeaderField:@"Content-Type"];
+    request.HTTPBody = [text dataUsingEncoding:NSUTF8StringEncoding];
+    return request;
+}
+
+- (NSData*) executeRawRequestSynchronously:(NSURLRequest*)request statusCode:(NSInteger*)statusCode {
+    if (request == nil) {
+        *statusCode = EHOSTDOWN;
+        return nil;
+    }
+    
+    __block NSData* body = nil;
+    __block NSInteger status = 0;
+    dispatch_semaphore_t requestLock = dispatch_semaphore_create(0);
+    
+    // Same session setup as executeRequestSynchronously, so the client certificate is offered
+    NSURLSession* urlSession = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration ephemeralSessionConfiguration] delegate:self delegateQueue:nil];
+    [[urlSession dataTaskWithRequest:request completionHandler:^(NSData * __nullable data, NSURLResponse * __nullable response, NSError * __nullable error) {
+        if (error != nil) {
+            Log(LOG_W, @"Raw request failed: %@", error);
+            status = [error code];
+        }
+        else {
+            status = [response isKindOfClass:[NSHTTPURLResponse class]] ? ((NSHTTPURLResponse*)response).statusCode : 0;
+            body = data;
+        }
+        dispatch_semaphore_signal(requestLock);
+    }] resume];
+    
+    dispatch_semaphore_wait(requestLock, DISPATCH_TIME_FOREVER);
+    [urlSession invalidateAndCancel];
+    
+    *statusCode = status;
+    return body;
+}
+
 - (NSURLRequest*) newAppAssetRequestWithAppId:(NSString *)appId {
     if (![self ensureHttpsUrlPopulated:NO]) {
         return nil;

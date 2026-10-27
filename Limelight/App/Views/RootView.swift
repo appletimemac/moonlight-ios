@@ -59,7 +59,42 @@ struct RootView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+        #if DEBUG
+        .task {
+            // Let the first navigation (a sole PC opens its apps) finish before presenting
+            try? await Task.sleep(for: .seconds(1))
+            openLaunchScreen()
+        }
+        #endif
     }
+
+    #if DEBUG
+    // Opens a screen named by -MoonlightOpen, for screenshots and smoke runs on
+    // simulators that can't take taps (a closed iPhone Duo)
+    private func openLaunchScreen() {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-MoonlightOpen"), index + 1 < arguments.count else { return }
+        appLog.notice("Opening launch screen \(arguments[index + 1], privacy: .public)")
+        switch arguments[index + 1] {
+        case "settings":
+            showsSettings = true
+        case "addHost":
+            showsAddHost = true
+        case "pairing":
+            if let host = library.hosts.first {
+                library.pairing = PairingSession(hostID: host.id, hostName: host.name, phase: .showingPIN("4815"))
+            }
+        case "naming":
+            if let host = library.hosts.first {
+                library.pairing = PairingSession(hostID: host.id, hostName: host.name, phase: .naming)
+            }
+        case "stream":
+            library.debugPresentStream()
+        default:
+            break
+        }
+    }
+    #endif
 
     private var alertIsPresented: Binding<Bool> {
         Binding(get: { library.alert != nil }, set: { if !$0 { library.alert = nil } })

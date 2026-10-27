@@ -326,11 +326,34 @@ final class HostLibrary {
         assets.stopRetrieving()
         discovery.stopDiscovery()
         refreshTask?.cancel()
-        presenter.present(configuration) { [weak self] in
-            guard let self, self.isForeground else { return }
-            self.resumeBrowsing()
+        presenter.present(configuration) { [weak self] action in
+            guard let self else { return }
+            if self.isForeground {
+                self.resumeBrowsing()
+            }
+            switch action {
+            case .quitApp:
+                self.quitRunningApp(onHostID: app.hostID)
+            case .restartToFit:
+                self.quitRunningApp(onHostID: app.hostID, thenStart: app)
+            default:
+                break
+            }
         }
     }
+
+    #if DEBUG
+    // Shows the stream screen against the first PC so its layout can be checked without
+    // a paired host; the connection fails and reports it, which is expected here.
+    func debugPresentStream() {
+        guard let host = coreHosts.values.first else { return }
+        let app = TemporaryApp()
+        app.id = "0"
+        app.name = "Layout Check"
+        app.host = host
+        presenter.present(StreamConfigurationFactory.make(app: app, host: host, window: presenter.window)) { _ in }
+    }
+    #endif
 
     func quitRunningApp(onHostID hostID: String, thenStart next: AppSnapshot? = nil) {
         guard let host = coreHosts[hostID] else { return }

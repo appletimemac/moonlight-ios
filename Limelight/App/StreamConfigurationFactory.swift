@@ -8,14 +8,21 @@ struct PixelSize: Equatable, Sendable {
 }
 
 enum StreamResolution {
-    // The stream size for "Match display": the window in pixels, landscape when the
-    // stream screen is landscape-only, rounded down to even numbers (4:2:0 video needs
-    // even dimensions) and scaled down to fit the decoder's limit.
+    // The stream size for "Match display": the video area in pixels, rounded down to
+    // even numbers (4:2:0 video needs even dimensions) and scaled down to fit the
+    // decoder's limit. A portrait window either rotates the stream screen to landscape
+    // (landscapeOnly) or splits it with the video in the top half (StreamLayout).
     static func matchingDisplay(points: CGSize, scale: CGFloat, landscapeOnly: Bool, maxDimension: Int) -> PixelSize {
         var width = Double(points.width * scale)
         var height = Double(points.height * scale)
-        if landscapeOnly && height > width {
-            swap(&width, &height)
+        if height > width {
+            if landscapeOnly {
+                // The iPhone Duo inner display ignores the lock and splits instead, but
+                // each half has the same shape as the rotated window
+                swap(&width, &height)
+            } else {
+                height /= 2
+            }
         }
         let longest = max(width, height)
         if longest > Double(maxDimension) {
@@ -75,6 +82,7 @@ enum StreamConfigurationFactory {
 
         config.useVirtualDisplay = AppPreferences.useVirtualDisplay
         config.virtualDisplayScale = Int32(AppPreferences.virtualDisplayScale)
+        config.supportsClipboard = HostSnapshot(host).apolloAccess?.canUseClipboard ?? false
         return config
     }
 

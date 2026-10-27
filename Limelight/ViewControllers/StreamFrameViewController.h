@@ -9,6 +9,9 @@
 #import "Connection.h"
 #import "StreamConfiguration.h"
 #import "StreamView.h"
+#if !TARGET_OS_TV
+#import "StreamPresentation.h"
+#endif
 
 #import <UIKit/UIKit.h>
 
@@ -23,7 +26,7 @@
 
 #if !TARGET_OS_TV
 // Runs once the stream screen has been dismissed
-@property (nonatomic, copy) void (^exitHandler)(void);
+@property (nonatomic, copy) void (^exitHandler)(StreamExitAction action);
 #endif
 
 -(void)updatePreferredDisplayMode:(BOOL)streamActive;

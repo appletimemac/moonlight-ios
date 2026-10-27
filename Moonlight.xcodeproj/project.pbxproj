@@ -10,7 +10,9 @@
 		07AC52C28C5192587B7AB9D2 /* HostModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F59F99ACE1FE04AB46CEC80 /* HostModels.swift */; };
 		162EA0B0D4B603A831CE76DC /* AddHostSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBAAA9CD279E112EE2596999 /* AddHostSheet.swift */; };
 		18F52BAFF2ED166D55648435 /* HostSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 532D826DDD6C6961E807203F /* HostSidebar.swift */; };
+		28E1F538E9898748B8F17DFD /* StreamLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A02C4059780D2AA569ED116 /* StreamLayout.swift */; };
 		3DB9585C0B55BB73E9B00398 /* CoreUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 8D5BEDB6BAA37A91B8942BE4 /* CoreUtilities.m */; };
+		47E1791B11FD1F7FFCAFF18A /* StreamPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029879B3C98C98540D183B66 /* StreamPanelController.swift */; };
 		5013FC8EB548D918853F660E /* X1Kit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35563C7E1B16439BD4B661F /* X1Kit.swift */; };
 		693B3A9B218638CD00982F7B /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 693B3A9A218638CD00982F7B /* Settings.bundle */; };
 		6AD51BBF37462E7359C119BF /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 455592BB0D09F2ABA891905C /* SettingsView.swift */; };
@@ -56,7 +58,9 @@
 		C569F28FDA87291F9A707ACB /* StreamConfigurationFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2158D87FAB4738ED97AC68D /* StreamConfigurationFactory.swift */; };
 		DADB31B50B4A70A5946C8144 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A88979BE92B7B5FE30349B1 /* RootView.swift */; };
 		DC1F5A07206436B20037755F /* ConnectionHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = DC1F5A06206436B20037755F /* ConnectionHelper.m */; };
+		DF118D59730B018B4343E835 /* PanelGamepadView.m in Sources */ = {isa = PBXBuildFile; fileRef = 1163ABA915FF477842CF873A /* PanelGamepadView.m */; };
 		E793BF071B13252BD3066248 /* X1Kit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35563C7E1B16439BD4B661F /* X1Kit.swift */; };
+		F2BA7C01A46AFD3100381964 /* HostKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 255B090AAC8E2D297499A163 /* HostKeyboard.swift */; };
 		F74BEF9C2C1A705600224667 /* OpenSSL in Frameworks */ = {isa = PBXBuildFile; productRef = F74BEF9B2C1A705600224667 /* OpenSSL */; };
 		F74BEFA42C1A80E400224667 /* OpenSSL in Frameworks */ = {isa = PBXBuildFile; productRef = F74BEFA32C1A80E400224667 /* OpenSSL */; };
 		FB1A674D2131E65900507771 /* KeyboardSupport.m in Sources */ = {isa = PBXBuildFile; fileRef = FB1A674C2131E65900507771 /* KeyboardSupport.m */; };
@@ -142,6 +146,7 @@
 		FBD3494319FC9C04002D2A60 /* AppAssetManager.m in Sources */ = {isa = PBXBuildFile; fileRef = FBD3494219FC9C04002D2A60 /* AppAssetManager.m */; };
 		FBD349621A0089F6002D2A60 /* DataManager.m in Sources */ = {isa = PBXBuildFile; fileRef = FBD349611A0089F6002D2A60 /* DataManager.m */; };
 		FE24EE33DF1E3443A21408EE /* CoreBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA3D08F79858BBA0BA963FB4 /* CoreBridge.swift */; };
+		FE643F335BA3432D6FE38029 /* PanelTrackpadView.m in Sources */ = {isa = PBXBuildFile; fileRef = BAFD2E4FB93C863C47014CF1 /* PanelTrackpadView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -176,6 +181,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		029879B3C98C98540D183B66 /* StreamPanelController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StreamPanelController.swift; sourceTree = "<group>"; };
+		1163ABA915FF477842CF873A /* PanelGamepadView.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = PanelGamepadView.m; sourceTree = "<group>"; };
+		1A02C4059780D2AA569ED116 /* StreamLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StreamLayout.swift; sourceTree = "<group>"; };
+		255B090AAC8E2D297499A163 /* HostKeyboard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HostKeyboard.swift; sourceTree = "<group>"; };
 		27713ECD2A2BEE77CDFBA76F /* VideoLayout.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = VideoLayout.h; sourceTree = "<group>"; };
 		455592BB0D09F2ABA891905C /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		4807CBCBB5715C46377FC6D8 /* HostDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HostDetailView.swift; sourceTree = "<group>"; };
@@ -187,6 +196,7 @@
 		5A88979BE92B7B5FE30349B1 /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		629382B68EBE4BAD7C6253E7 /* StreamPresenter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StreamPresenter.swift; sourceTree = "<group>"; };
 		693B3A9A218638CD00982F7B /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
+		8672C3E3843A22B93B053E60 /* PanelTrackpadView.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = PanelTrackpadView.h; sourceTree = "<group>"; };
 		88D5A740BBAC2F1E6E4FDC9F /* PairingSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PairingSheet.swift; sourceTree = "<group>"; };
 		8D5BEDB6BAA37A91B8942BE4 /* CoreUtilities.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = CoreUtilities.m; sourceTree = "<group>"; };
 		9803CCAB254F9EAF00EE185E /* ConnectionCallbacks.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ConnectionCallbacks.h; sourceTree = "<group>"; };
@@ -232,6 +242,7 @@
 		A321BD6773972CB496B45622 /* AppGridView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppGridView.swift; sourceTree = "<group>"; };
 		B327AC544B0DFCD0F41E0389 /* AppPreferences.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		B35563C7E1B16439BD4B661F /* X1Kit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = X1Kit.swift; sourceTree = "<group>"; };
+		BAFD2E4FB93C863C47014CF1 /* PanelTrackpadView.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = PanelTrackpadView.m; sourceTree = "<group>"; };
 		BB3254F688374271E4173141 /* SceneDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		BBAAA9CD279E112EE2596999 /* AddHostSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddHostSheet.swift; sourceTree = "<group>"; };
 		C2158D87FAB4738ED97AC68D /* StreamConfigurationFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StreamConfigurationFactory.swift; sourceTree = "<group>"; };
@@ -239,6 +250,7 @@
 		DA3D08F79858BBA0BA963FB4 /* CoreBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreBridge.swift; sourceTree = "<group>"; };
 		DC1F5A05206436B10037755F /* ConnectionHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConnectionHelper.h; sourceTree = "<group>"; };
 		DC1F5A06206436B20037755F /* ConnectionHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ConnectionHelper.m; sourceTree = "<group>"; };
+		DCD1EBC3FF4826C4B9DB75DC /* PanelGamepadView.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = PanelGamepadView.h; sourceTree = "<group>"; };
 		E7C08BA4246D87477123393D /* StreamPresentation.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = StreamPresentation.h; sourceTree = "<group>"; };
 		FB1A674B2131E65900507771 /* KeyboardSupport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyboardSupport.h; sourceTree = "<group>"; };
 		FB1A674C2131E65900507771 /* KeyboardSupport.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KeyboardSupport.m; sourceTree = "<group>"; };
@@ -421,9 +433,21 @@
 				BB3254F688374271E4173141 /* SceneDelegate.swift */,
 				C2158D87FAB4738ED97AC68D /* StreamConfigurationFactory.swift */,
 				629382B68EBE4BAD7C6253E7 /* StreamPresenter.swift */,
+				D51BA2584C897FA383D7F527 /* Stream */,
 			);
 			name = App;
 			path = App;
+			sourceTree = "<group>";
+		};
+		D51BA2584C897FA383D7F527 /* Stream */ = {
+			isa = PBXGroup;
+			children = (
+				255B090AAC8E2D297499A163 /* HostKeyboard.swift */,
+				1A02C4059780D2AA569ED116 /* StreamLayout.swift */,
+				029879B3C98C98540D183B66 /* StreamPanelController.swift */,
+			);
+			name = Stream;
+			path = Stream;
 			sourceTree = "<group>";
 		};
 		FB1A67542132419700507771 /* Moonlight TV */ = {
@@ -562,6 +586,10 @@
 				988FCD3F293B091B003050E2 /* KeyboardInputField.h */,
 				988FCD40293B091B003050E2 /* KeyboardInputField.m */,
 				B35563C7E1B16439BD4B661F /* X1Kit.swift */,
+				DCD1EBC3FF4826C4B9DB75DC /* PanelGamepadView.h */,
+				1163ABA915FF477842CF873A /* PanelGamepadView.m */,
+				8672C3E3843A22B93B053E60 /* PanelTrackpadView.h */,
+				BAFD2E4FB93C863C47014CF1 /* PanelTrackpadView.m */,
 			);
 			path = Input;
 			sourceTree = "<group>";
@@ -982,6 +1010,11 @@
 				DADB31B50B4A70A5946C8144 /* RootView.swift in Sources */,
 				6AD51BBF37462E7359C119BF /* SettingsView.swift in Sources */,
 				996DD74002FA358EDF65104D /* StreamPresentation.m in Sources */,
+				F2BA7C01A46AFD3100381964 /* HostKeyboard.swift in Sources */,
+				28E1F538E9898748B8F17DFD /* StreamLayout.swift in Sources */,
+				47E1791B11FD1F7FFCAFF18A /* StreamPanelController.swift in Sources */,
+				DF118D59730B018B4343E835 /* PanelGamepadView.m in Sources */,
+				FE643F335BA3432D6FE38029 /* PanelTrackpadView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1186,6 +1219,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

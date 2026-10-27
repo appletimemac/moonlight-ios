@@ -9,7 +9,7 @@
 @implementation StreamPresentation
 
 + (UIViewController *)streamViewControllerWithConfiguration:(StreamConfiguration *)configuration
-                                                exitHandler:(void (^)(void))exitHandler {
+                                                exitHandler:(void (^)(StreamExitAction action))exitHandler {
     StreamFrameViewController *streamFrame = [[StreamFrameViewController alloc] init];
     streamFrame.streamConfig = configuration;
     streamFrame.exitHandler = exitHandler;

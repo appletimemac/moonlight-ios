@@ -21,6 +21,9 @@
 #import <AVFoundation/AVDisplayCriteria.h>
 #import <AVKit/AVDisplayManager.h>
 #import <AVKit/UIWindow.h>
+#else
+#import "PanelGamepadView.h"
+#import "PanelTrackpadView.h"
 #endif
 
 @interface AVDisplayCriteria()
@@ -28,6 +31,11 @@
 @property(readonly, nonatomic) float refreshRate;
 - (id)initWithRefreshRate:(float)arg1 videoDynamicRange:(int)arg2;
 @end
+
+#if !TARGET_OS_TV
+@interface StreamFrameViewController () <StreamControlsDelegate>
+@end
+#endif
 
 @implementation StreamFrameViewController {
     ControllerSupport *_controllerSupport;
@@ -43,7 +51,8 @@
     UILabel *_tipLabel;
     UIActivityIndicatorView *_spinner;
     StreamView *_streamView;
-    CGSize _lastLayoutSize;
+    CGRect _appliedVideoFrame;
+    CGRect _appliedPanelFrame;
     UIScrollView *_scrollView;
     BOOL _userIsInteracting;
     CGSize _keyboardSize;
@@ -51,6 +60,12 @@
     
 #if !TARGET_OS_TV
     UIScreenEdgePanGestureRecognizer *_exitSwipeRecognizer;
+    StreamPanelController *_panel;
+    StreamPanelController *_controlsOverlay;
+    UIView *_controlsOverlayBackdrop;
+    UIVisualEffectView *_overlayGlass;
+    id _hingeInteraction;
+    StreamExitAction _exitAction;
 #endif
 }
 
@@ -106,7 +121,6 @@
     _inactivityTimer = nil;
     
     _streamView = [[StreamView alloc] initWithFrame:self.view.bounds];
-    _streamView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [_streamView setupStreamView:_controllerSupport interactionDelegate:self config:self.streamConfig];
     
 #if TARGET_OS_TV
@@ -128,7 +142,7 @@
     [self.view addGestureRecognizer:_playPauseTapGestureRecognizer];
 
 #else
-    _exitSwipeRecognizer = [[UIScreenEdgePanGestureRecognizer alloc] initWithTarget:self action:@selector(edgeSwiped)];
+    _exitSwipeRecognizer = [[UIScreenEdgePanGestureRecognizer alloc] initWithTarget:self action:@selector(edgeSwiped:)];
     _exitSwipeRecognizer.edges = UIRectEdgeLeft;
     _exitSwipeRecognizer.delaysTouchesBegan = NO;
     _exitSwipeRecognizer.delaysTouchesEnded = NO;
@@ -142,7 +156,7 @@
 #if TARGET_OS_TV
     [_tipLabel setText:@"Tip: Tap the Play/Pause button on the Apple TV Remote to disconnect from your PC"];
 #else
-    [_tipLabel setText:@"Tip: Swipe from the left edge to disconnect from your PC"];
+    [_tipLabel setText:@"Tip: Swipe from the left edge for stream controls"];
 #endif
     
     [_tipLabel sizeToFit];
@@ -188,7 +202,6 @@
     // Only enable scroll and zoom in absolute touch mode
     if (_settings.absoluteTouchMode) {
         _scrollView = [[UIScrollView alloc] initWithFrame:self.view.bounds];
-        _scrollView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 #if !TARGET_OS_TV
         [_scrollView.panGestureRecognizer setMinimumNumberOfTouches:2];
 #endif
@@ -209,35 +222,117 @@
     [self.view addSubview:_stageLabel];
     [self.view addSubview:_spinner];
     [self.view addSubview:_tipLabel];
+    
+#if !TARGET_OS_TV
+    // The iPhone Duo panel, shown under the video when the stream area is portrait
+    PanelGamepadView* gamepad = [[PanelGamepadView alloc] initWithControllerSupport:_controllerSupport streamConfig:self.streamConfig];
+    PanelTrackpadView* trackpad = [[PanelTrackpadView alloc] initWithFrame:CGRectZero];
+    _panel = [[StreamPanelController alloc] initWithStyle:StreamPanelStylePanel
+                                            configuration:self.streamConfig
+                                              gamepadView:gamepad
+                                             trackpadView:trackpad
+                                                 delegate:self];
+    [self addChildViewController:_panel];
+    _panel.view.hidden = YES;
+    [self.view addSubview:_panel.view];
+    [_panel didMoveToParentViewController:self];
+    
+    if (@available(iOS 27.1, *)) {
+        // Reserved regions have no change notification, so a hinge move triggers the relayout
+        __weak StreamFrameViewController* weakSelf = self;
+        UIHingeInteraction* hinge = [[UIHingeInteraction alloc] initWithUpdateHandler:^(UIHingeInteraction* interaction, UIHingeInteractionUpdate* update) {
+            [weakSelf.view setNeedsLayout];
+        }];
+        [self.view addInteraction:hinge];
+        _hingeInteraction = hinge;
+    }
+#endif
 }
 
 - (UIView *)viewForZoomingInScrollView:(UIScrollView *)scrollView {
     return _streamView;
 }
 
-// The window can change size during a stream, for example when folding or
-// unfolding iPhone Duo. Keep the stream view and video layer filling it.
+// The window can change size during a stream (folding or unfolding iPhone Duo), and on
+// the Duo inner display in portrait the video moves above the crease with the panel below.
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
-
-    CGSize size = self.view.bounds.size;
-    if (CGSizeEqualToSize(size, _lastLayoutSize)) {
+    
+    CGRect bounds = self.view.bounds;
+#if TARGET_OS_TV
+    CGRect videoFrame = bounds;
+    CGRect panelFrame = CGRectZero;
+#else
+    StreamLayout* layout = [StreamLayout layoutWithBounds:bounds crease:[self creaseFrame]];
+    CGRect videoFrame = layout.videoFrame;
+    CGRect panelFrame = layout.panelFrame;
+#endif
+    [self layoutOverlays];
+    if (CGRectEqualToRect(videoFrame, _appliedVideoFrame) && CGRectEqualToRect(panelFrame, _appliedPanelFrame)) {
         return;
     }
-    _lastLayoutSize = size;
-
+    _appliedVideoFrame = videoFrame;
+    _appliedPanelFrame = panelFrame;
+    
     if (_scrollView != nil) {
         // Reset any zoom so the stream view can match the new size
         [_scrollView setZoomScale:1.0f animated:NO];
+        _scrollView.frame = videoFrame;
         _streamView.frame = _scrollView.bounds;
         _scrollView.contentSize = _scrollView.bounds.size;
     }
-
-    _stageLabel.center = CGPointMake(size.width / 2, _stageLabel.center.y);
-    _spinner.center = CGPointMake(size.width / 2, _spinner.center.y);
-    _tipLabel.center = CGPointMake(size.width / 2, _tipLabel.center.y);
-
+    else {
+        _streamView.frame = videoFrame;
+    }
+    
+    _stageLabel.center = CGPointMake(CGRectGetMidX(videoFrame), CGRectGetMidY(videoFrame));
+    _spinner.center = CGPointMake(CGRectGetMidX(videoFrame), CGRectGetMidY(videoFrame) - _stageLabel.frame.size.height - _spinner.frame.size.height);
+    _tipLabel.center = CGPointMake(CGRectGetMidX(videoFrame), CGRectGetMinY(videoFrame) + videoFrame.size.height * 0.9);
+    
+#if !TARGET_OS_TV
+    BOOL split = !CGRectIsEmpty(panelFrame);
+    if (split && _panel.view.hidden) {
+        [_controllerSupport enableOnScreenController];
+    }
+    _panel.view.frame = panelFrame;
+    _panel.view.hidden = !split;
+    [_streamView setOnScreenControlsSuppressed:split];
+    [_panel refresh];
+#endif
+    
+    [_streamView updateOnScreenControlsLayout];
     [_streamMan updateRendererLayout];
+}
+
+#if !TARGET_OS_TV
+// The iPhone Duo crease in this view's coordinates, or CGRectNull. Flat, the region is
+// inactive but still marks the crease, so it is preferred over splitting at the midline.
+- (CGRect)creaseFrame {
+    if (@available(iOS 27.1, *)) {
+        CGRect inactive = CGRectNull;
+        for (UIViewReservedRegion* region in [self.view reservedRegionsOfKind:[UIViewReservedRegionKind divisionRegionKind]
+                                                                       options:UIViewReservedRegionQueryOptionsIncludeInactive]) {
+            if (region.isActive) {
+                return region.frame;
+            }
+            inactive = region.frame;
+        }
+        return inactive;
+    }
+    return CGRectNull;
+}
+#endif
+
+- (void)layoutOverlays {
+#if !TARGET_OS_TV
+    if (_controlsOverlay != nil) {
+        UIEdgeInsets safe = self.view.safeAreaInsets;
+        CGRect bounds = self.view.bounds;
+        CGFloat height = MIN(460, bounds.size.height - safe.top - safe.bottom - 32);
+        _controlsOverlay.view.frame = CGRectMake(safe.left + 16, (bounds.size.height - height) / 2, MIN(340, bounds.size.width - 32), height);
+        _controlsOverlayBackdrop.frame = bounds;
+    }
+#endif
 }
 
 - (void)willMoveToParentViewController:(UIViewController *)parent {
@@ -255,7 +350,7 @@
         [self tearDownStream];
 #if !TARGET_OS_TV
         if (self.exitHandler != nil) {
-            self.exitHandler();
+            self.exitHandler(_exitAction);
             self.exitHandler = nil;
         }
 #endif
@@ -325,18 +420,26 @@
             [_overlayView setTextAlignment:NSTextAlignmentCenter];
         }
         
+#if TARGET_OS_TV
         [_overlayView setTextColor:[UIColor lightGrayColor]];
         [_overlayView setBackgroundColor:[UIColor blackColor]];
-#if TARGET_OS_TV
         [_overlayView setFont:[UIFont systemFontOfSize:24]];
-#else
-        [_overlayView setFont:[UIFont systemFontOfSize:12]];
-#endif
         [_overlayView setAlpha:0.5];
         [self.view addSubview:_overlayView];
+#else
+        [_overlayView setTextColor:[UIColor whiteColor]];
+        [_overlayView setBackgroundColor:[UIColor clearColor]];
+        [_overlayView setFont:[UIFont monospacedDigitSystemFontOfSize:12 weight:UIFontWeightMedium]];
+        _overlayGlass = [[UIVisualEffectView alloc] initWithEffect:[UIGlassEffect effectWithStyle:UIGlassEffectStyleRegular]];
+        _overlayGlass.cornerConfiguration = [UICornerConfiguration configurationWithRadius:[UICornerRadius fixedRadius:16]];
+        _overlayGlass.userInteractionEnabled = NO;
+        [_overlayGlass.contentView addSubview:_overlayView];
+        [self.view addSubview:_overlayGlass];
+#endif
     }
     
     if (text != nil) {
+#if TARGET_OS_TV
         // We set our bounds to the maximum width in order to work around a bug where
         // sizeToFit interacts badly with the UITextView's line breaks, causing the
         // width to get smaller and smaller each time as more line breaks are inserted.
@@ -348,9 +451,26 @@
         [_overlayView sizeToFit];
         [_overlayView setCenter:CGPointMake(self.view.frame.size.width / 2, _overlayView.frame.size.height / 2)];
         [_overlayView setHidden:NO];
+#else
+        // Keep it on the video (above the crease when split) and out of the safe area
+        CGRect video = _appliedVideoFrame;
+        UIEdgeInsets safe = self.view.safeAreaInsets;
+        CGFloat maxWidth = MAX(video.size.width - safe.left - safe.right - 32, 120);
+        [_overlayView setText:text];
+        CGSize size = [_overlayView sizeThatFits:CGSizeMake(maxWidth, CGFLOAT_MAX)];
+        _overlayView.frame = CGRectMake(4, 0, size.width, size.height);
+        _overlayGlass.frame = CGRectMake(CGRectGetMidX(video) - (size.width + 8) / 2,
+                                         MAX(CGRectGetMinY(video), safe.top) + 8,
+                                         size.width + 8, size.height);
+        [_overlayGlass setHidden:NO];
+#endif
     }
     else {
+#if TARGET_OS_TV
         [_overlayView setHidden:YES];
+#else
+        [_overlayGlass setHidden:YES];
+#endif
     }
 }
 
@@ -417,11 +537,78 @@
     [self returnToMainFrame];
 }
 
-- (void)edgeSwiped {
-    Log(LOG_I, @"User swiped to end stream");
+#if !TARGET_OS_TV
+- (void)edgeSwiped:(UIScreenEdgePanGestureRecognizer*)recognizer {
+    if (recognizer.state == UIGestureRecognizerStateBegan) {
+        [self toggleControlsOverlay];
+    }
+}
+
+- (void)toggleControlsOverlay {
+    if (_controlsOverlay != nil) {
+        [self dismissControlsOverlay];
+        return;
+    }
     
+    _controlsOverlayBackdrop = [[UIView alloc] initWithFrame:self.view.bounds];
+    _controlsOverlayBackdrop.backgroundColor = [UIColor colorWithWhite:0 alpha:0.3];
+    [_controlsOverlayBackdrop addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismissControlsOverlay)]];
+    [self.view addSubview:_controlsOverlayBackdrop];
+    
+    _controlsOverlay = [[StreamPanelController alloc] initWithStyle:StreamPanelStyleOverlay
+                                                       configuration:self.streamConfig
+                                                         gamepadView:nil
+                                                        trackpadView:nil
+                                                            delegate:self];
+    [self addChildViewController:_controlsOverlay];
+    [self.view addSubview:_controlsOverlay.view];
+    [_controlsOverlay didMoveToParentViewController:self];
+    [self layoutOverlays];
+    
+    _controlsOverlay.view.alpha = 0;
+    _controlsOverlayBackdrop.alpha = 0;
+    [UIView animateWithDuration:0.2 animations:^{
+        self->_controlsOverlay.view.alpha = 1;
+        self->_controlsOverlayBackdrop.alpha = 1;
+    }];
+}
+
+- (void)dismissControlsOverlay {
+    if (_controlsOverlay == nil) {
+        return;
+    }
+    [_controlsOverlay willMoveToParentViewController:nil];
+    [_controlsOverlay.view removeFromSuperview];
+    [_controlsOverlay removeFromParentViewController];
+    [_controlsOverlayBackdrop removeFromSuperview];
+    _controlsOverlay = nil;
+    _controlsOverlayBackdrop = nil;
+}
+
+- (NSString *)streamControlsStatsText {
+    return [_streamMan getStatsOverlayText];
+}
+
+- (void)streamControlsToggleKeyboard {
+    [self dismissControlsOverlay];
+    [_streamView toggleKeyboard];
+}
+
+- (void)streamControlsDisconnect {
+    _exitAction = StreamExitActionDisconnect;
     [self returnToMainFrame];
 }
+
+- (void)streamControlsQuitApp {
+    _exitAction = StreamExitActionQuitApp;
+    [self returnToMainFrame];
+}
+
+- (void)streamControlsRestartToFit {
+    _exitAction = StreamExitActionRestartToFit;
+    [self returnToMainFrame];
+}
+#endif
 
 - (void) connectionStarted {
     Log(LOG_I, @"Connection started");
