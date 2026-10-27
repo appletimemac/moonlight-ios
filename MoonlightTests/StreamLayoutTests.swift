@@ -38,6 +38,12 @@ struct StreamLayoutTests {
         #expect(layout.panelFrame.minY == 470)
     }
 
+    @Test func creaseAtTheEdgeCannotCollapseTheVideo() {
+        let crease = CGRect(x: 0, y: 0, width: 669, height: 40)
+        let layout = StreamLayout.layout(bounds: CGRect(x: 0, y: 0, width: 669, height: 951), crease: crease)
+        #expect(layout.videoFrame.height == 475)
+    }
+
     @Test func implausibleCreaseFallsBackToTheMidline() {
         // A region that doesn't span the view's width is not a crease to split at
         let crease = CGRect(x: 0, y: 100, width: 120, height: 40)
@@ -87,5 +93,12 @@ struct ApolloAccessTests {
     @Test func clipboardNeedsBothDirections() {
         let readOnly = ApolloAccess(mask: 0x3000000 | 0x20000)
         #expect(!readOnly.canUseClipboard)
+    }
+}
+
+struct AppPreferencesTests {
+    @Test func deviceNameKeyIsTheOneUtilsReads() {
+        // Utils.m reads the pairing name under this Objective-C constant
+        #expect(AppPreferences.deviceNameKey == "PairingDeviceName")
     }
 }

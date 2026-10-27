@@ -44,11 +44,13 @@ final class StreamLayout: NSObject {
 
         var videoBottom = bounds.midY.rounded(.down)
         var panelTop = videoBottom
+        // Only a crease that leaves both sides a real share of the view counts
+        let margin = bounds.height / 4
         if !crease.isNull,
            crease.width >= bounds.width / 2,
            crease.height < bounds.height / 3,
-           crease.midY > bounds.minY,
-           crease.midY < bounds.maxY {
+           crease.minY >= bounds.minY + margin,
+           crease.maxY <= bounds.maxY - margin {
             videoBottom = crease.minY
             panelTop = crease.maxY
         }

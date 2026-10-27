@@ -336,6 +336,8 @@
 }
 
 - (void)willMoveToParentViewController:(UIViewController *)parent {
+    [super willMoveToParentViewController:parent];
+    
     // Only cleanup when we're being popped (tvOS pushes the stream)
     if (parent == nil) {
         [self tearDownStream];
@@ -350,8 +352,13 @@
         [self tearDownStream];
 #if !TARGET_OS_TV
         if (self.exitHandler != nil) {
-            self.exitHandler(_exitAction);
+            // After the dismissal settles, so the handler is free to present again
+            void (^exitHandler)(StreamExitAction) = self.exitHandler;
+            StreamExitAction action = _exitAction;
             self.exitHandler = nil;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                exitHandler(action);
+            });
         }
 #endif
     }
@@ -366,6 +373,8 @@
     [_controllerSupport cleanup];
     [UIApplication sharedApplication].idleTimerDisabled = NO;
     [_streamMan stopStream];
+    [_statsUpdateTimer invalidate];
+    _statsUpdateTimer = nil;
     if (_inactivityTimer != nil) {
         [_inactivityTimer invalidate];
         _inactivityTimer = nil;
@@ -561,9 +570,12 @@
                                                         trackpadView:nil
                                                             delegate:self];
     [self addChildViewController:_controlsOverlay];
+    // Keep VoiceOver inside the card instead of on the game controls behind it
+    _controlsOverlay.view.accessibilityViewIsModal = YES;
     [self.view addSubview:_controlsOverlay.view];
     [_controlsOverlay didMoveToParentViewController:self];
     [self layoutOverlays];
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, _controlsOverlay.view);
     
     _controlsOverlay.view.alpha = 0;
     _controlsOverlayBackdrop.alpha = 0;
@@ -583,10 +595,15 @@
     [_controlsOverlayBackdrop removeFromSuperview];
     _controlsOverlay = nil;
     _controlsOverlayBackdrop = nil;
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil);
 }
 
 - (NSString *)streamControlsStatsText {
     return [_streamMan getStatsOverlayText];
+}
+
+- (void)streamControlsClose {
+    [self dismissControlsOverlay];
 }
 
 - (void)streamControlsToggleKeyboard {

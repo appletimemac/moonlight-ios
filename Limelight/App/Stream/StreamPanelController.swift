@@ -4,6 +4,7 @@ import UIKit
 // Implemented by StreamFrameViewController, which owns the stream itself
 @objc protocol StreamControlsDelegate: AnyObject {
     func streamControlsStatsText() -> String?
+    func streamControlsClose()
     func streamControlsToggleKeyboard()
     func streamControlsDisconnect()
     func streamControlsQuitApp()
@@ -106,6 +107,7 @@ private final class StreamControlsModel {
         restartSize = size == current ? nil : size
     }
 
+    func close() { delegate?.streamControlsClose() }
     func toggleKeyboard() { delegate?.streamControlsToggleKeyboard() }
     func disconnect() { delegate?.streamControlsDisconnect() }
     func quitApp() { delegate?.streamControlsQuitApp() }
@@ -213,6 +215,7 @@ private struct TrackpadPanel: View {
                             .font(.footnote)
                             .foregroundStyle(.tertiary)
                             .allowsHitTesting(false)
+                            .accessibilityHidden(true)
                     }
                     .accessibilityLabel("Trackpad")
                     .accessibilityHint("Drag to move the pointer. Tap to click, tap with two fingers to right click.")
@@ -303,14 +306,21 @@ private struct StreamOverlayCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(model.appName)
-                .font(.headline)
+            HStack {
+                Text(model.appName)
+                    .font(.headline)
+                Spacer()
+                Button("Close", systemImage: "xmark") { model.close() }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.glass)
+            }
             StreamControlsView(model: model)
         }
         .padding(20)
         .frame(width: 340)
         .frame(maxHeight: 520)
         .glassEffect(.regular, in: .rect(cornerRadius: 28))
+        .accessibilityAction(.escape) { model.close() }
     }
 }
 
