@@ -12,7 +12,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface RelativeTouchHandler : UIResponder
 
--(id)initWithView:(StreamView*)view;
+-(id)initWithView:(UIView*)view;
+
+// For a trackpad that shares the screen with other controls: both axes scale by the
+// view's width (a short, wide pad moves the cursor equally in every direction) and only
+// fingers on this view count toward gestures. Stream views keep the 1280x720 reference
+// and every touch in the event, as before.
+@property (nonatomic) BOOL trackpadSurface;
 
 @end
 

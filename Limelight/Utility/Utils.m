@@ -14,6 +14,18 @@
 
 @implementation Utils
 NSString *const deviceName = @"roth";
+NSString *const pairingDeviceNameKey = @"PairingDeviceName";
+
++ (NSString*) pairingDeviceName {
+#if !TARGET_OS_TV
+    // Hosts like Apollo show this name in their client list
+    NSString* name = [[[NSUserDefaults standardUserDefaults] stringForKey:pairingDeviceNameKey] trim];
+    if (name.length > 0) {
+        return name;
+    }
+#endif
+    return deviceName;
+}
 
 + (NSData*) randomBytes:(NSInteger)length {
     char* bytes = malloc(length);

@@ -99,6 +99,16 @@
     if (serverCodecModeString != nil) {
         host.serverCodecModeSupport = [[serverCodecModeString trim] intValue];
     }
+    
+    // Apollo extensions. Only the HTTPS serverinfo a paired client receives carries
+    // the real values (the plain HTTP response reports PairStatus 0 and Permission 0),
+    // and a host that omits them is not Apollo, so the earlier values are cleared.
+    if (host.pairState == PairStatePaired) {
+        NSInteger permissions;
+        host.apolloPermissions = [self getIntTag:@"Permission" value:&permissions] ? (int)permissions : -1;
+        NSString *virtualDisplayCapable = [[self getStringTag:@"VirtualDisplayCapable"] trim];
+        host.virtualDisplayCapable = [virtualDisplayCapable isEqualToString:@"true"] || [virtualDisplayCapable intValue] != 0;
+    }
 }
 
 @end

@@ -31,5 +31,10 @@
 @property BOOL multiController;
 @property BOOL useFramePacing;
 @property NSData* serverCert;
+// Apollo: ask for a virtual display, scaled by virtualDisplayScale percent (0 leaves the host default)
+@property BOOL useVirtualDisplay;
+@property int virtualDisplayScale;
+// Apollo granted this client clipboard access
+@property BOOL supportsClipboard;
 
 @end

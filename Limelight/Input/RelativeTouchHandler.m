@@ -28,7 +28,7 @@ static const int REFERENCE_HEIGHT = 720;
     UIView* view;
 }
 
-- (id)initWithView:(StreamView*)view {
+- (id)initWithView:(UIView*)view {
     self = [self init];
     self->view = view;
     
@@ -46,6 +46,10 @@ static const int REFERENCE_HEIGHT = 720;
     return self;
 }
 
+- (NSSet<UITouch*>*)gestureTouches:(UIEvent*)event {
+    return self.trackpadSurface ? ([event touchesForView:view] ?: [NSSet set]) : [event allTouches];
+}
+
 - (BOOL)isConfirmedMove:(CGPoint)currentPoint from:(CGPoint)originalPoint {
     // Movements of greater than 5 pixels are considered confirmed
     return hypotf(originalPoint.x - currentPoint.x, originalPoint.y - currentPoint.y) >= 5;
@@ -60,9 +64,9 @@ static const int REFERENCE_HEIGHT = 720;
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
     touchMoved = false;
-    peakTouchCount = [[event allTouches] count];
-    if ([[event allTouches] count] == 1) {
-        UITouch *touch = [[event allTouches] anyObject];
+    peakTouchCount = [[self gestureTouches:event] count];
+    if ([[self gestureTouches:event] count] == 1) {
+        UITouch *touch = [[self gestureTouches:event] anyObject];
         originalLocation = touchLocation = [touch locationInView:view];
         if (!isDragging) {
             dragTimer = [NSTimer scheduledTimerWithTimeInterval:0.650
@@ -72,24 +76,31 @@ static const int REFERENCE_HEIGHT = 720;
                                                     repeats:NO];
         }
     }
-    else if ([[event allTouches] count] == 2) {
-        CGPoint firstLocation = [[[[event allTouches] allObjects] objectAtIndex:0] locationInView:view];
-        CGPoint secondLocation = [[[[event allTouches] allObjects] objectAtIndex:1] locationInView:view];
+    else if ([[self gestureTouches:event] count] == 2) {
+        CGPoint firstLocation = [[[[self gestureTouches:event] allObjects] objectAtIndex:0] locationInView:view];
+        CGPoint secondLocation = [[[[self gestureTouches:event] allObjects] objectAtIndex:1] locationInView:view];
         
         originalLocation = touchLocation = CGPointMake((firstLocation.x + secondLocation.x) / 2, (firstLocation.y + secondLocation.y) / 2);
     }
 }
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
-    if ([[event allTouches] count] == 1) {
-        UITouch *touch = [[event allTouches] anyObject];
+    if ([[self gestureTouches:event] count] == 1) {
+        UITouch *touch = [[self gestureTouches:event] anyObject];
         CGPoint currentLocation = [touch locationInView:view];
         
         if (touchLocation.x != currentLocation.x ||
             touchLocation.y != currentLocation.y)
         {
-            int deltaX = (currentLocation.x - touchLocation.x) * (REFERENCE_WIDTH / view.bounds.size.width);
-            int deltaY = (currentLocation.y - touchLocation.y) * (REFERENCE_HEIGHT / view.bounds.size.height);
+            if (view.bounds.size.width < 1 || view.bounds.size.height < 1) {
+                // A collapsing view mid-gesture would scale this into a huge jump
+                touchLocation = currentLocation;
+                return;
+            }
+            CGFloat scaleX = REFERENCE_WIDTH / view.bounds.size.width;
+            CGFloat scaleY = self.trackpadSurface ? scaleX : REFERENCE_HEIGHT / view.bounds.size.height;
+            int deltaX = (currentLocation.x - touchLocation.x) * scaleX;
+            int deltaY = (currentLocation.y - touchLocation.y) * scaleY;
             
             if (deltaX != 0 || deltaY != 0) {
                 LiSendMouseMoveEvent(deltaX, deltaY);
@@ -102,9 +113,9 @@ static const int REFERENCE_HEIGHT = 720;
                 }
             }
         }
-    } else if ([[event allTouches] count] == 2) {
-        CGPoint firstLocation = [[[[event allTouches] allObjects] objectAtIndex:0] locationInView:view];
-        CGPoint secondLocation = [[[[event allTouches] allObjects] objectAtIndex:1] locationInView:view];
+    } else if ([[self gestureTouches:event] count] == 2) {
+        CGPoint firstLocation = [[[[self gestureTouches:event] allObjects] objectAtIndex:0] locationInView:view];
+        CGPoint secondLocation = [[[[self gestureTouches:event] allObjects] objectAtIndex:1] locationInView:view];
         
         CGPoint avgLocation = CGPointMake((firstLocation.x + secondLocation.x) / 2, (firstLocation.y + secondLocation.y) / 2);
         if (touchLocation.y != avgLocation.y) {
@@ -158,9 +169,9 @@ static const int REFERENCE_HEIGHT = 720;
     // We we're moving from 2+ touches to 1. Synchronize the current position
     // of the active finger so we don't jump unexpectedly on the next touchesMoved
     // callback when finger 1 switches on us.
-    if ([[event allTouches] count] - [touches count] == 1) {
-        NSMutableSet *activeSet = [[NSMutableSet alloc] initWithCapacity:[[event allTouches] count]];
-        [activeSet unionSet:[event allTouches]];
+    if ([[self gestureTouches:event] count] - [touches count] == 1) {
+        NSMutableSet *activeSet = [[NSMutableSet alloc] initWithCapacity:[[self gestureTouches:event] count]];
+        [activeSet unionSet:[self gestureTouches:event]];
         [activeSet minusSet:touches];
         touchLocation = [[activeSet anyObject] locationInView:view];
         

@@ -21,8 +21,11 @@ typedef NS_ENUM(int, State) {
 };
 
 FOUNDATION_EXPORT NSString *const deviceName;
+// UserDefaults key for the name sent when pairing (iOS lets the user set it)
+FOUNDATION_EXPORT NSString *const pairingDeviceNameKey;
 
 + (NSData*) randomBytes:(NSInteger)length;
++ (NSString*) pairingDeviceName;
 + (NSString*) bytesToHex:(NSData*)data;
 + (NSData*) hexToBytes:(NSString*) hex;
 + (void) addHelpOptionToDialog:(UIAlertController*)dialog;

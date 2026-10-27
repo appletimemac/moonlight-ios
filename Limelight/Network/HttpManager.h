@@ -31,6 +31,13 @@
 - (NSURLRequest*) newAppAssetRequestWithAppId:(NSString*)appId;
 - (void) executeRequestSynchronously:(HttpRequest*)request;
 
+// Apollo's clipboard endpoint. It only answers a client that is streaming.
+- (NSURLRequest*) newClipboardRequest;
+- (NSURLRequest*) newClipboardUpdateRequest:(NSString*)text;
+// For endpoints that answer with plain bodies and HTTP status codes instead of XML.
+// Returns the body; statusCode receives the HTTP status, or an error code.
+- (NSData*) executeRawRequestSynchronously:(NSURLRequest*)request statusCode:(NSInteger*)statusCode;
+
 @end
 
 

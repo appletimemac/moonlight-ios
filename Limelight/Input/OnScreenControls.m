@@ -69,48 +69,50 @@
     Controller *_controller;
     NSMutableArray* _deadTouches;
     BOOL _swapABXY;
+    
+    // Layout, per instance because the iPhone Duo panel runs a second set of controls
+    float BUTTON_CENTER_X;
+    float BUTTON_CENTER_Y;
+    float D_PAD_CENTER_X;
+    float D_PAD_CENTER_Y;
+    float STICK_INNER_SIZE;
+    float STICK_OUTER_SIZE;
+    float LS_CENTER_X;
+    float LS_CENTER_Y;
+    float RS_CENTER_X;
+    float RS_CENTER_Y;
+    float START_X;
+    float START_Y;
+    float SELECT_X;
+    float SELECT_Y;
+    float R1_X;
+    float R1_Y;
+    float R2_X;
+    float R2_Y;
+    float R3_X;
+    float R3_Y;
+    float L1_X;
+    float L1_Y;
+    float L2_X;
+    float L2_Y;
+    float L3_X;
+    float L3_Y;
 }
 
 static const float EDGE_WIDTH = .05;
 
 //static const float BUTTON_SIZE = 50;
 static const float BUTTON_DIST = 20;
-static float BUTTON_CENTER_X;
-static float BUTTON_CENTER_Y;
 
 static const float D_PAD_DIST = 10;
-static float D_PAD_CENTER_X;
-static float D_PAD_CENTER_Y;
 
 static const float DEAD_ZONE_PADDING = 15;
 
 static const double STICK_CLICK_RATE = 100;
 static const float STICK_DEAD_ZONE = .1;
-static float STICK_INNER_SIZE;
-static float STICK_OUTER_SIZE;
-static float LS_CENTER_X;
-static float LS_CENTER_Y;
-static float RS_CENTER_X;
-static float RS_CENTER_Y;
 
-static float START_X;
-static float START_Y;
 
-static float SELECT_X;
-static float SELECT_Y;
 
-static float R1_X;
-static float R1_Y;
-static float R2_X;
-static float R2_Y;
-static float R3_X;
-static float R3_Y;
-static float L1_X;
-static float L1_Y;
-static float L2_X;
-static float L2_Y;
-static float L3_X;
-static float L3_Y;
 
 - (id) initWithView:(UIView*)view controllerSup:(ControllerSupport*)controllerSupport streamConfig:(StreamConfiguration*)streamConfig {
     self = [self init];
@@ -120,19 +122,7 @@ static float L3_Y;
     _deadTouches = [[NSMutableArray alloc] init];
     _swapABXY = streamConfig.swapABXYButtons;
     
-    _iPad = ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad);
-    _controlArea = CGRectMake(0, 0, _view.frame.size.width, _view.frame.size.height);
-    if (_iPad)
-    {
-        // Cut down the control area on an iPad so the controls are more reachable
-        _controlArea.size.height = _view.frame.size.height / 2.0;
-        _controlArea.origin.y = _view.frame.size.height - _controlArea.size.height;
-    }
-    else
-    {
-        _controlArea.origin.x = _controlArea.size.width * EDGE_WIDTH;
-        _controlArea.size.width -= _controlArea.origin.x * 2;
-    }
+    [self computeControlArea];
     
     _aButton = [CALayer layer];
     _bButton = [CALayer layer];
@@ -158,6 +148,57 @@ static float L3_Y;
     return self;
 }
 
+- (void) computeControlArea {
+    CGSize size = _view.bounds.size;
+    
+    // Tablet-sized canvases (iPad, the iPhone Duo inner display) use the iPad layout
+    _iPad = !_usesFullArea && MIN(size.width, size.height) >= 600;
+    _controlArea = CGRectMake(0, 0, size.width, size.height);
+    if (_iPad)
+    {
+        // Cut down the control area on an iPad so the controls are more reachable
+        _controlArea.size.height = size.height / 2.0;
+        _controlArea.origin.y = size.height - _controlArea.size.height;
+    }
+    else
+    {
+        _controlArea.origin.x = _controlArea.size.width * EDGE_WIDTH;
+        _controlArea.size.width -= _controlArea.origin.x * 2;
+    }
+}
+
+- (void) updateLayout {
+    [self computeControlArea];
+    if (_visible) {
+        [self updateControls];
+    }
+}
+
+- (void) setUsesFullArea:(BOOL)usesFullArea {
+    _usesFullArea = usesFullArea;
+    [self updateLayout];
+}
+
+- (void) setSuppressed:(BOOL)suppressed {
+    if (suppressed && !_suppressed) {
+        // Let go of anything held now, or the host keeps seeing it pressed once these
+        // controls are hidden (the split happens under the user's fingers on a fold)
+        UITouch* __strong held[] = { _aTouch, _bTouch, _xTouch, _yTouch, _dpadTouch, _lsTouch, _rsTouch,
+            _startTouch, _selectTouch, _r1Touch, _r2Touch, _r3Touch, _l1Touch, _l2Touch, _l3Touch };
+        NSMutableSet* touches = [NSMutableSet setWithArray:_deadTouches];
+        for (size_t i = 0; i < sizeof(held) / sizeof(held[0]); i++) {
+            if (held[i] != nil) {
+                [touches addObject:held[i]];
+            }
+        }
+        [self handleTouchUpEvent:touches];
+    }
+    _suppressed = suppressed;
+    if (_visible) {
+        [self updateControls];
+    }
+}
+
 - (void) show {
     _visible = YES;
         
@@ -179,7 +220,7 @@ static float L3_Y;
 }
 
 - (void) updateControls {
-    switch (_level) {
+    switch (_suppressed ? OnScreenControlsLevelOff : _level) {
         case OnScreenControlsLevelOff:
             [self hideButtons];
             [self hideBumpers];
@@ -553,6 +594,10 @@ static float L3_Y;
 }
 
 - (BOOL) handleTouchMovedEvent:touches {
+    if (_suppressed) {
+        return NO;
+    }
+    
     BOOL updated = false;
     BOOL buttonTouch = false;
     float rsMaxX = RS_CENTER_X + STICK_OUTER_SIZE / 2;
@@ -658,6 +703,10 @@ static float L3_Y;
 }
 
 - (BOOL)handleTouchDownEvent:touches {
+    if (_suppressed) {
+        return NO;
+    }
+    
     BOOL updated = false;
     BOOL stickTouch = false;
     for (UITouch* touch in touches) {
@@ -778,6 +827,7 @@ static float L3_Y;
 }
 
 - (BOOL)handleTouchUpEvent:touches {
+    // Ups are handled even while suppressed so nothing pressed before can stay pressed
     BOOL updated = false;
     BOOL touched = false;
     for (UITouch* touch in touches) {
@@ -891,70 +941,70 @@ static float L3_Y;
 
 - (BOOL) isDpadDeadZone:(UITouch*) touch {
     return [self isDeadZone:touch
-                     startX:_view.frame.origin.x
+                     startX:_view.bounds.origin.x
                      startY:_upButton.frame.origin.y
                        endX:_rightButton.frame.origin.x + _rightButton.frame.size.width
-                       endY:_view.frame.origin.y + _view.frame.size.height];
+                       endY:_view.bounds.origin.y + _view.bounds.size.height];
 }
 
 - (BOOL) isAbxyDeadZone:(UITouch*) touch {
     return [self isDeadZone:touch
                      startX:_xButton.frame.origin.x
                      startY:_yButton.frame.origin.y
-                       endX:_view.frame.origin.x + _view.frame.size.width
-                       endY:_view.frame.origin.y + _view.frame.size.height];
+                       endX:_view.bounds.origin.x + _view.bounds.size.width
+                       endY:_view.bounds.origin.y + _view.bounds.size.height];
 }
 
 - (BOOL) isBumperDeadZone:(UITouch*) touch {
     return [self isDeadZone:touch
-                     startX:_view.frame.origin.x
+                     startX:_view.bounds.origin.x
                      startY:_l2Button.frame.origin.y + _l2Button.frame.size.height
                        endX:_l1Button.frame.origin.x + _l1Button.frame.size.width
                        endY:_upButton.frame.origin.y]
     || [self isDeadZone:touch
                  startX:_r2Button.frame.origin.x
                  startY:_r2Button.frame.origin.y + _r2Button.frame.size.height
-                   endX:_view.frame.origin.x + _view.frame.size.width
+                   endX:_view.bounds.origin.x + _view.bounds.size.width
                    endY:_yButton.frame.origin.y];
 }
 
 - (BOOL) isTriggerDeadZone:(UITouch*) touch {
     return [self isDeadZone:touch
-                     startX:_view.frame.origin.x
+                     startX:_view.bounds.origin.x
                      startY:_l2Button.frame.origin.y
                        endX:_l2Button.frame.origin.x + _l2Button.frame.size.width
-                       endY:_view.frame.origin.y + _view.frame.size.height]
+                       endY:_view.bounds.origin.y + _view.bounds.size.height]
     || [self isDeadZone:touch
                  startX:_r2Button.frame.origin.x
                  startY:_r2Button.frame.origin.y
-                   endX:_view.frame.origin.x + _view.frame.size.width
-                   endY:_view.frame.origin.y + _view.frame.size.height];
+                   endX:_view.bounds.origin.x + _view.bounds.size.width
+                   endY:_view.bounds.origin.y + _view.bounds.size.height];
 }
 
 - (BOOL) isL3R3DeadZone:(UITouch*) touch {
     return [self isDeadZone:touch
-                     startX:_view.frame.origin.x
+                     startX:_view.bounds.origin.x
                      startY:_l3Button.frame.origin.y
-                       endX:_view.frame.origin.x
-                       endY:_view.frame.origin.y + _view.frame.size.height]
+                       endX:_view.bounds.origin.x
+                       endY:_view.bounds.origin.y + _view.bounds.size.height]
     || [self isDeadZone:touch
                  startX:_r3Button.frame.origin.x
                  startY:_r3Button.frame.origin.y
-                   endX:_view.frame.origin.x + _view.frame.size.width
-                   endY:_view.frame.origin.y + _view.frame.size.height];
+                   endX:_view.bounds.origin.x + _view.bounds.size.width
+                   endY:_view.bounds.origin.y + _view.bounds.size.height];
 }
 
 - (BOOL) isStartSelectDeadZone:(UITouch*) touch {
     return [self isDeadZone:touch
                      startX:_startButton.frame.origin.x
                      startY:_startButton.frame.origin.y
-                       endX:_view.frame.origin.x + _view.frame.size.width
-                       endY:_view.frame.origin.y + _view.frame.size.height]
+                       endX:_view.bounds.origin.x + _view.bounds.size.width
+                       endY:_view.bounds.origin.y + _view.bounds.size.height]
     || [self isDeadZone:touch
-                 startX:_view.frame.origin.x
+                 startX:_view.bounds.origin.x
                  startY:_selectButton.frame.origin.y
                    endX:_selectButton.frame.origin.x + _selectButton.frame.size.width
-                   endY:_view.frame.origin.y + _view.frame.size.height];
+                   endY:_view.bounds.origin.y + _view.bounds.size.height];
 }
 
 - (BOOL) isStickDeadZone:(UITouch*) touch {
@@ -962,12 +1012,12 @@ static float L3_Y;
                      startX:_leftStickBackground.frame.origin.x - 15
                      startY:_leftStickBackground.frame.origin.y - 15
                        endX:_leftStickBackground.frame.origin.x + _leftStickBackground.frame.size.width + 15
-                       endY:_view.frame.origin.y + _view.frame.size.height]
+                       endY:_view.bounds.origin.y + _view.bounds.size.height]
     || [self isDeadZone:touch
                  startX:_rightStickBackground.frame.origin.x - 15
                  startY:_rightStickBackground.frame.origin.y - 15
                    endX:_rightStickBackground.frame.origin.x + _rightStickBackground.frame.size.width + 15
-                   endY:_view.frame.origin.y + _view.frame.size.height];
+                   endY:_view.bounds.origin.y + _view.bounds.size.height];
 }
 
 - (BOOL) isDeadZone:(UITouch*) touch startX:(float)deadZoneStartX startY:(float)deadZoneStartY endX:(float)deadZoneEndX endY:(float)deadZoneEndY {

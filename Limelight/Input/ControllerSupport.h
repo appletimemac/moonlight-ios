@@ -27,6 +27,8 @@
 -(void) initAutoOnScreenControlMode:(OnScreenControls*)osc;
 -(void) cleanup;
 -(Controller*) getOscController;
+// The iPhone Duo panel gamepad drives the OSC controller even when the OSC setting is off
+-(void) enableOnScreenController;
 
 -(void) updateLeftStick:(Controller*)controller x:(short)x y:(short)y;
 -(void) updateRightStick:(Controller*)controller x:(short)x y:(short)y;

@@ -49,7 +49,9 @@
     UIAlertController* _pairAlert;
     LoadingFrameViewController* _loadingFrame;
     UIScrollView* hostScrollView;
+#if !TARGET_OS_TV
     FrontViewPosition currentPosition;
+#endif
     NSArray* _sortedAppList;
     NSCache* _boxArtCache;
     bool _background;
@@ -960,8 +962,10 @@ static NSMutableSet* hostList;
     
     _loadingFrame = [self.storyboard instantiateViewControllerWithIdentifier:@"loadingFrame"];
     
+#if !TARGET_OS_TV
     // Set the current position to the center
     currentPosition = FrontViewPositionLeft;
+#endif
     
     // Set up crypto
     [CryptoManager generateKeyPairUsingSSL];
