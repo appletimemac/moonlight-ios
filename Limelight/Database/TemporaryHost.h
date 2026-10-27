@@ -25,6 +25,9 @@
 @property (atomic, nullable, retain) NSString *ipv6Address;
 @property (atomic, nullable, retain) NSString *mac;
 @property (atomic)                   int serverCodecModeSupport;
+// Apollo: this client's permission mask from HTTPS serverinfo, or -1 when unknown
+@property (atomic)                   int apolloPermissions;
+@property (atomic)                   BOOL virtualDisplayCapable;
 
 NS_ASSUME_NONNULL_BEGIN
 

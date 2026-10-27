@@ -55,7 +55,8 @@
     // Use the same UID for all Moonlight clients to allow them
     // quit games started on another Moonlight client.
     _uniqueId = @"0123456789ABCDEF";
-    _deviceName = deviceName;
+    // The name goes into pairing query strings as is
+    _deviceName = [[Utils pairingDeviceName] stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet alphanumericCharacterSet]];
     _serverCert = serverCert;
     
     NSString* address = [Utils addressPortStringToAddress:hostAddressPortString];
@@ -269,7 +270,16 @@
     // indicated by a negative version in the last field.
     int fps = (config.frameRate > 60 && ![config.appVersion containsString:@".-"]) ? 0 : config.frameRate;
     
-    NSString* urlString = [NSString stringWithFormat:@"%@/%@?uniqueid=%@&appid=%@&mode=%dx%dx%d&additionalStates=1&sops=%d&rikey=%@&rikeyid=%d%@&localAudioPlayMode=%d&surroundAudioInfo=%d&remoteControllersBitmap=%d&gcmap=%d&gcpersist=%d%s",
+    // Apollo reads these; other hosts ignore unknown parameters
+    NSMutableString* apolloParams = [NSMutableString string];
+    if (config.useVirtualDisplay) {
+        [apolloParams appendString:@"&virtualDisplay=1"];
+    }
+    if (config.virtualDisplayScale > 0 && config.virtualDisplayScale != 100) {
+        [apolloParams appendFormat:@"&scaleFactor=%d", config.virtualDisplayScale];
+    }
+    
+    NSString* urlString = [NSString stringWithFormat:@"%@/%@?uniqueid=%@&appid=%@&mode=%dx%dx%d&additionalStates=1&sops=%d&rikey=%@&rikeyid=%d%@&localAudioPlayMode=%d&surroundAudioInfo=%d&remoteControllersBitmap=%d&gcmap=%d&gcpersist=%d%@%s",
                            _baseHTTPSURL, verb, _uniqueId,
                            config.appID,
                            config.width, config.height, fps,
@@ -280,6 +290,7 @@
                            SURROUNDAUDIOINFO_FROM_AUDIO_CONFIGURATION(config.audioConfiguration),
                            config.gamepadMask, config.gamepadMask,
                            !config.multiController ? 1 : 0,
+                           apolloParams,
                            LiGetLaunchUrlQueryParameters()];
     Log(LOG_I, @"Requesting: %@", urlString);
     // This blocks while the app is launching
