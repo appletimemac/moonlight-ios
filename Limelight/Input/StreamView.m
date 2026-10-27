@@ -400,6 +400,7 @@ static const double X1_MOUSE_SPEED_DIVISOR = 2.5;
 
 - (UIBarButtonItem *)createButtonWithImageNamed:(NSString *)imageName backgroundColor:(UIColor *)backgroundColor target:(id)target action:(SEL)action keyCode:(NSInteger)keyCode isToggleable:(BOOL)isToggleable {
     UIImage *image = [UIImage imageNamed:imageName];
+#if TARGET_OS_TV
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
     [button setImage:image forState:UIControlStateNormal];
     button.frame = CGRectMake(0, 0, 30, 30);
@@ -407,6 +408,21 @@ static const double X1_MOUSE_SPEED_DIVISOR = 2.5;
     button.imageView.backgroundColor = backgroundColor;
     button.imageView.layer.cornerRadius = 10.0;
     button.imageEdgeInsets = UIEdgeInsetsMake(6, 6, 6, 6);
+#else
+    // Glass keys tinted like the system keyboard bar; a toggled modifier turns prominent
+    UIImage *glyph = [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    UIButtonConfiguration *configuration = [UIButtonConfiguration glassButtonConfiguration];
+    configuration.image = glyph;
+    configuration.contentInsets = NSDirectionalEdgeInsetsMake(8, 8, 8, 8);
+    UIButton *button = [UIButton buttonWithConfiguration:configuration primaryAction:nil];
+    button.frame = CGRectMake(0, 0, 40, 36);
+    button.configurationUpdateHandler = ^(UIButton *updated) {
+        UIButtonConfiguration *next = updated.isSelected ? [UIButtonConfiguration prominentGlassButtonConfiguration] : [UIButtonConfiguration glassButtonConfiguration];
+        next.image = glyph;
+        next.contentInsets = NSDirectionalEdgeInsetsMake(8, 8, 8, 8);
+        updated.configuration = next;
+    };
+#endif
     [button addTarget:target action:action forControlEvents:UIControlEventTouchUpInside];
     objc_setAssociatedObject(button, "keyCode", @(keyCode), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     objc_setAssociatedObject(button, "isToggleable", @(isToggleable), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -421,11 +437,15 @@ static const double X1_MOUSE_SPEED_DIVISOR = 2.5;
     if (isToggleable){
         isOn = !isOn;
         // Update the button's appearance based on its new state
+#if TARGET_OS_TV
         if (isOn) {
             sender.imageView.backgroundColor = [UIColor lightGrayColor];
         } else {
             sender.imageView.backgroundColor = [UIColor blackColor];
         }
+#else
+        sender.selected = isOn;
+#endif
     }
     // Update the new on/off state of the button
     objc_setAssociatedObject(sender, "isOn", @(isOn), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
