@@ -15,7 +15,7 @@
     if (self) {
         self.multipleTouchEnabled = YES;
         _touchHandler = [[RelativeTouchHandler alloc] initWithView:self];
-        _touchHandler.uniformScaling = YES;
+        _touchHandler.trackpadSurface = YES;
     }
     return self;
 }

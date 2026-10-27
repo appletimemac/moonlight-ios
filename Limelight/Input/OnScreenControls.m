@@ -180,6 +180,19 @@ static const float STICK_DEAD_ZONE = .1;
 }
 
 - (void) setSuppressed:(BOOL)suppressed {
+    if (suppressed && !_suppressed) {
+        // Let go of anything held now, or the host keeps seeing it pressed once these
+        // controls are hidden (the split happens under the user's fingers on a fold)
+        UITouch* __strong held[] = { _aTouch, _bTouch, _xTouch, _yTouch, _dpadTouch, _lsTouch, _rsTouch,
+            _startTouch, _selectTouch, _r1Touch, _r2Touch, _r3Touch, _l1Touch, _l2Touch, _l3Touch };
+        NSMutableSet* touches = [NSMutableSet setWithArray:_deadTouches];
+        for (size_t i = 0; i < sizeof(held) / sizeof(held[0]); i++) {
+            if (held[i] != nil) {
+                [touches addObject:held[i]];
+            }
+        }
+        [self handleTouchUpEvent:touches];
+    }
     _suppressed = suppressed;
     if (_visible) {
         [self updateControls];
@@ -814,10 +827,7 @@ static const float STICK_DEAD_ZONE = .1;
 }
 
 - (BOOL)handleTouchUpEvent:touches {
-    if (_suppressed) {
-        return NO;
-    }
-    
+    // Ups are handled even while suppressed so nothing pressed before can stay pressed
     BOOL updated = false;
     BOOL touched = false;
     for (UITouch* touch in touches) {

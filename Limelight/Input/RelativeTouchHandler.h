@@ -14,9 +14,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(id)initWithView:(UIView*)view;
 
-// Scale both axes by the view's width so a short, wide trackpad moves the cursor
-// equally in every direction. Stream views keep the 1280x720 reference instead.
-@property (nonatomic) BOOL uniformScaling;
+// For a trackpad that shares the screen with other controls: both axes scale by the
+// view's width (a short, wide pad moves the cursor equally in every direction) and only
+// fingers on this view count toward gestures. Stream views keep the 1280x720 reference
+// and every touch in the event, as before.
+@property (nonatomic) BOOL trackpadSurface;
 
 @end
 

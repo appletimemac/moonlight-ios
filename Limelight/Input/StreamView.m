@@ -416,6 +416,8 @@ static const double X1_MOUSE_SPEED_DIVISOR = 2.5;
     configuration.contentInsets = NSDirectionalEdgeInsetsMake(8, 8, 8, 8);
     UIButton *button = [UIButton buttonWithConfiguration:configuration primaryAction:nil];
     button.frame = CGRectMake(0, 0, 40, 36);
+    // The glyph images are named for their key (EscapeIcon.png reads as "Escape")
+    button.accessibilityLabel = [[imageName stringByDeletingPathExtension] stringByReplacingOccurrencesOfString:@"Icon" withString:@""];
     button.configurationUpdateHandler = ^(UIButton *updated) {
         UIButtonConfiguration *next = updated.isSelected ? [UIButtonConfiguration prominentGlassButtonConfiguration] : [UIButtonConfiguration glassButtonConfiguration];
         next.image = glyph;
