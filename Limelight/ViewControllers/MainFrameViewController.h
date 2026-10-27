@@ -13,9 +13,9 @@
 #import "UIComputerView.h"
 #import "UIAppView.h"
 #import "AppAssetManager.h"
-#import "SWRevealViewController.h"
 
-@interface MainFrameViewController : UICollectionViewController <DiscoveryCallback, PairCallback, HostCallback, AppCallback, AppAssetCallback, NSURLConnectionDelegate, SWRevealViewControllerDelegate>
+// Only the tvOS app uses this controller; iOS has a SwiftUI front end
+@interface MainFrameViewController : UICollectionViewController <DiscoveryCallback, PairCallback, HostCallback, AppCallback, AppAssetCallback, NSURLConnectionDelegate>
 
 @property (weak, nonatomic) IBOutlet UIBarButtonItem *settingsButton;
 #if !TARGET_OS_TV

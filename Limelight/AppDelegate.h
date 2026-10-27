@@ -23,12 +23,3 @@
 - (NSURL*) getStoreURL;
 
 @end
-
-#if !TARGET_OS_TV
-// Required by iOS 27: apps built with the current SDK must use the scene lifecycle
-@interface SceneDelegate : UIResponder <UIWindowSceneDelegate>
-
-@property (strong, nonatomic) UIWindow *window;
-
-@end
-#endif

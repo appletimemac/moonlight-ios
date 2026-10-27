@@ -7,7 +7,6 @@
 //
 
 #import "StreamFrameViewController.h"
-#import "MainFrameViewController.h"
 #import "VideoDecoderRenderer.h"
 #import "StreamManager.h"
 #import "ControllerSupport.h"
@@ -48,18 +47,10 @@
     UIScrollView *_scrollView;
     BOOL _userIsInteracting;
     CGSize _keyboardSize;
+    BOOL _tornDown;
     
 #if !TARGET_OS_TV
     UIScreenEdgePanGestureRecognizer *_exitSwipeRecognizer;
-#endif
-}
-
-- (void)viewDidAppear:(BOOL)animated
-{
-    [super viewDidAppear:animated];
-    
-#if !TARGET_OS_TV
-    [[self revealViewController] setPrimaryViewController:self];
 #endif
 }
 
@@ -81,7 +72,12 @@
     [super viewDidLoad];
     
     [self.navigationController setNavigationBarHidden:YES animated:YES];
-    
+
+#if !TARGET_OS_TV
+    // Created in code on iOS, so there is no storyboard background
+    self.view.backgroundColor = [UIColor blackColor];
+#endif
+
     [UIApplication sharedApplication].idleTimerDisabled = YES;
     
     _settings = [[[DataManager alloc] init] getSettings];
@@ -99,7 +95,8 @@
 #if TARGET_OS_TV
     [_spinner setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleWhiteLarge];
 #else
-    [_spinner setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleWhite];
+    [_spinner setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleMedium];
+    [_spinner setColor:[UIColor whiteColor]];
 #endif
     [_spinner sizeToFit];
     [_spinner startAnimating];
@@ -244,17 +241,41 @@
 }
 
 - (void)willMoveToParentViewController:(UIViewController *)parent {
-    // Only cleanup when we're being destroyed
+    // Only cleanup when we're being popped (tvOS pushes the stream)
     if (parent == nil) {
-        [_controllerSupport cleanup];
-        [UIApplication sharedApplication].idleTimerDisabled = NO;
-        [_streamMan stopStream];
-        if (_inactivityTimer != nil) {
-            [_inactivityTimer invalidate];
-            _inactivityTimer = nil;
-        }
-        [[NSNotificationCenter defaultCenter] removeObserver:self];
+        [self tearDownStream];
     }
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+
+    // iOS presents the stream modally, so it never leaves a parent
+    if (self.isBeingDismissed) {
+        [self tearDownStream];
+#if !TARGET_OS_TV
+        if (self.exitHandler != nil) {
+            self.exitHandler();
+            self.exitHandler = nil;
+        }
+#endif
+    }
+}
+
+- (void)tearDownStream {
+    if (_tornDown) {
+        return;
+    }
+    _tornDown = YES;
+
+    [_controllerSupport cleanup];
+    [UIApplication sharedApplication].idleTimerDisabled = NO;
+    [_streamMan stopStream];
+    if (_inactivityTimer != nil) {
+        [_inactivityTimer invalidate];
+        _inactivityTimer = nil;
+    }
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 #if 0
@@ -339,8 +360,15 @@
     
     [_statsUpdateTimer invalidate];
     _statsUpdateTimer = nil;
-    
+
+#if TARGET_OS_TV
     [self.navigationController popToRootViewControllerAnimated:YES];
+#else
+    // Several exit paths can fire for one disconnect (background, error alert, edge swipe)
+    if (self.presentingViewController != nil && !self.isBeingDismissed) {
+        [self.presentingViewController dismissViewControllerAnimated:YES completion:nil];
+    }
+#endif
 }
 
 // This will fire if the user opens control center or gets a low battery message
@@ -546,7 +574,12 @@
 
 - (void) launchFailed:(NSString*)message {
     Log(LOG_I, @"Launch failed: %@", message);
-    
+
+    // Apollo refuses launches from clients that lack its Launch Apps permission
+    if ([message rangeOfString:@"Permission denied" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+        message = [message stringByAppendingString:@"\n\nYour PC hasn't given this device permission to launch apps. In Apollo's web UI, open Clients, select this device and turn on Launch Apps, plus the input permissions you need."];
+    }
+
     dispatch_async(dispatch_get_main_queue(), ^{
         // Allow the display to go to sleep now
         [UIApplication sharedApplication].idleTimerDisabled = NO;
@@ -727,8 +760,22 @@
     return NO;
 }
 
-- (BOOL)shouldAutorotate {
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
+    // Streams are landscape on iPhone. The iPhone Duo inner display ignores this
+    // and can present any orientation, which the stream layout handles.
+    if (self.traitCollection.userInterfaceIdiom == UIUserInterfaceIdiomPhone) {
+        return UIInterfaceOrientationMaskLandscape;
+    }
+    return UIInterfaceOrientationMaskAll;
+}
+
+- (BOOL)prefersStatusBarHidden {
     return YES;
+}
+
+// A full screen video player is the case Apple names for keeping bars horizontal
+- (UIVerticalBarBehavior)preferredVerticalBarBehavior API_AVAILABLE(ios(27.1)) {
+    return UIVerticalBarBehaviorDisabled;
 }
 
 - (BOOL)prefersPointerLocked {

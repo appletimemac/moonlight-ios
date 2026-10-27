@@ -21,6 +21,11 @@
 #endif
 @property (nonatomic) StreamConfiguration* streamConfig;
 
+#if !TARGET_OS_TV
+// Runs once the stream screen has been dismissed
+@property (nonatomic, copy) void (^exitHandler)(void);
+#endif
+
 -(void)updatePreferredDisplayMode:(BOOL)streamActive;
 
 @end
